@@ -20,10 +20,12 @@ class LaravelPlanetscale
 
     public function createBranch(string $name): string
     {
-        return $this->post("branches", [
+        $response = $this->post("branches", [
             'name' => $name,
             'parent_branch' => config('planetscale.production_branch')
-        ])->json('name');
+        ]);
+        \Log::debug($response);
+        return $response->json('name');
     }
 
     public function isBranchReady(string $name): bool
@@ -90,10 +92,12 @@ class LaravelPlanetscale
 
     private function post(string $endpoint, array $body = []): Response
     {
-        return $this
+        $response = $this
             ->baseRequest()
-            ->post($this->getUrl($endpoint), $body)
-            ->throw();
+            ->post($this->getUrl($endpoint), $body);
+
+        \Log::debug($response->body());
+        return $response->throw();
     }
 
     private function baseRequest(): PendingRequest
@@ -102,8 +106,9 @@ class LaravelPlanetscale
             ->acceptJson()
             ->asJson()
             ->timeout(60)
-            ->retry(3, 1000, function (Exception $exception, PendingRequest $request) {
-                return $exception instanceof ConnectionException;
-            });
+            ->retry(3, 1000);
+//            ->retry(3, 1000, function (Exception $exception, PendingRequest $request) {
+//                return $exception instanceof ConnectionException;
+//            });
     }
 }
