@@ -61,6 +61,7 @@ class PscaleMigrateCommand extends BaseCommand
         try {
             $dev_branch = $this->pscale->createBranch('artisan-migrate-' . time());
         } catch (RequestException $e) {
+            \Log::debug($e->getMessage());
             return $this->error('Failed to create development branch.');
         }
 
@@ -75,6 +76,7 @@ class PscaleMigrateCommand extends BaseCommand
         try {
             $connection = $this->pscale->branchPassword($dev_branch);
         } catch (RequestException $e) {
+            \Log::debug($e->getMessage());
             return $this->error('Unable to obtain credentials for development branch.');
         }
 
@@ -87,16 +89,16 @@ class PscaleMigrateCommand extends BaseCommand
         $this->line('Running Laravel migrations on development branch...');
         if ($this->pscale->runMigrations()) {
             if ($this->call('migrate', [
-                '--database' => $this->option('database'),
-                '--force' => $this->option('force'),
-                '--path' => $this->option('path'),
-                '--realpath' => $this->option('realpath'),
-                '--schema-path' => $this->option('schema-path'),
-                '--pretend' => $this->option('pretend'),
-                '--seed' => $this->option('seed'),
-                '--seeder' => $this->option('seeder'),
-                '--step' => $this->option('step'),
-            ]) > 0)
+                    '--database' => $this->option('database'),
+                    '--force' => $this->option('force'),
+                    '--path' => $this->option('path'),
+                    '--realpath' => $this->option('realpath'),
+                    '--schema-path' => $this->option('schema-path'),
+                    '--pretend' => $this->option('pretend'),
+                    '--seed' => $this->option('seed'),
+                    '--seeder' => $this->option('seeder'),
+                    '--step' => $this->option('step'),
+                ]) > 0)
                 return $this->error('An error occured while trying to complete the migration on the development branch.');
         } else {
             $this->warn("Testing detected. Skip running `php artisan migrate`...");
@@ -107,6 +109,7 @@ class PscaleMigrateCommand extends BaseCommand
         try {
             $deploy_id = $this->pscale->deployRequest($dev_branch);
         } catch (RequestException $e) {
+            \Log::debug($e->getMessage());
             return $this->error('Unable to create the deploy request on Planetscale.');
         }
 
@@ -120,6 +123,7 @@ class PscaleMigrateCommand extends BaseCommand
         try {
             $this->pscale->completeDeploy($deploy_id);
         } catch (RequestException $e) {
+            \Log::debug($e->getMessage());
             return $this->error('Unable to deploy the development branch to the production branch.');
         }
 
@@ -141,6 +145,7 @@ class PscaleMigrateCommand extends BaseCommand
         try {
             $this->pscale->deleteBranch($dev_branch);
         } catch (RequestException $e) {
+            \Log::debug($e->getMessage());
             return $this->error('The deployment was successful, but we were unable to delete the dev branch afterwards.');
         }
 
@@ -187,7 +192,7 @@ class PscaleMigrateCommand extends BaseCommand
     {
         // Use migrate:status to get any pending migrations.
         Artisan::call('migrate:status', [
-            '--pending' => true,
+//            '--pending' => true,
             '--database' => $this->option('database'),
             '--path' => $this->option('path'),
             '--realpath' => $this->option('realpath')
